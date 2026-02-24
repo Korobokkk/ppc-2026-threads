@@ -25,7 +25,7 @@ class KiselevITestTaskSEQ : public BaseTask {
   bool RunImpl() override;
   bool PostProcessingImpl() override;
   double ComputeIntegral(const std::vector<int> &steps);
-  double FunctionTypeChoose(int type_x, double x, double y);
+  static double FunctionTypeChoose(int type_x, double x, double y);
 };
 
 }  // namespace kiselev_i_trapezoidal_method_for_multidimensional_integrals

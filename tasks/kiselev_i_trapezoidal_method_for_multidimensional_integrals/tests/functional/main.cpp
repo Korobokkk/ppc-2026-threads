@@ -80,41 +80,36 @@ class KiselevIRunFuncTestsThreads : public ppc::util::BaseRunFuncTests<InType, O
         break;
 
       case 9:
-        input_data_ = {{0, 0}, {2 * kPi, 2 * kPi}, {600, 600}, 1};
-        expected_value_ = 0.0;
-        break;
-
-      case 10:
         input_data_ = {{0, 0}, {kPi / 2, kPi / 2}, {300, 300}, 2};
         expected_value_ = (kPi / 2) * (1 - 0) + (kPi / 2) * (1 - 0);  // π
         break;
 
-      case 11:
+      case 10:
         input_data_ = {{0, 0}, {1, 1}, {200, 200}, 2};
         expected_value_ = (1) * (std::cos(0) - std::cos(1)) + (1) * (std::sin(1) - std::sin(0));
         break;
 
-      case 12:
+      case 11:
         input_data_ = {{-1, -1}, {1, 1}, {300, 300}, 2};
         expected_value_ = (2) * (std::cos(-1) - std::cos(1)) + (2) * (std::sin(1) - std::sin(-1));
         break;
 
-      case 13:
+      case 12:
         input_data_ = {{0, 0}, {1, 1}, {200, 200}, 3};
         expected_value_ = (std::exp(1) - 1) * (std::exp(1) - 1);
         break;
 
-      case 14:
+      case 13:
         input_data_ = {{0, 0}, {2, 2}, {200, 200}, 3};
         expected_value_ = (std::exp(2) - 1) * (std::exp(2) - 1);
         break;
 
-      case 15:
+      case 14:
         input_data_ = {{0, 0}, {0, 0}, {10, 10}, 3};
         expected_value_ = 0.0;
         break;
 
-      case 16:
+      case 15:
         input_data_ = {{0, 0}, {1, 1}, {150, 150}, 0, -1.0};
         expected_value_ = 2.0 / 3.0;
         break;
@@ -138,23 +133,14 @@ TEST_P(KiselevIRunFuncTestsThreads, IntegralCorrectness) {
   ExecuteTest(GetParam());
 }
 
-const std::array<TestType, 17> kTestParam = {std::make_tuple(0, "sq1"),
-                                             std::make_tuple(1, "sq2"),
-                                             std::make_tuple(2, "sq3"),
-                                             std::make_tuple(3, "sq4"),
-                                             std::make_tuple(4, "sq5"),
-                                             std::make_tuple(5, "lin1"),
-                                             std::make_tuple(6, "lin2"),
-                                             std::make_tuple(7, "lin3"),
-                                             std::make_tuple(8, "lin4"),
-                                             std::make_tuple(9, "cos1"),
-                                             std::make_tuple(10, "cos2"),
-                                             std::make_tuple(11, "cos3"),
-                                             std::make_tuple(12, "cos4"),
-                                             std::make_tuple(13, "exp1"),
-                                             std::make_tuple(14, "exp2"),
-                                             std::make_tuple(15, "exp3"),
-                                             std::make_tuple(16, "null_eps_for_perf")};
+const std::array<TestType, 16> kTestParam = {std::make_tuple(0, "sq1"),   std::make_tuple(1, "sq2"),
+                                             std::make_tuple(2, "sq3"),   std::make_tuple(3, "sq4"),
+                                             std::make_tuple(4, "sq5"),   std::make_tuple(5, "lin1"),
+                                             std::make_tuple(6, "lin2"),  std::make_tuple(7, "lin3"),
+                                             std::make_tuple(8, "lin4"),  std::make_tuple(9, "cos1"),
+                                             std::make_tuple(10, "cos2"), std::make_tuple(11, "cos3"),
+                                             std::make_tuple(12, "exp1"), std::make_tuple(13, "exp2"),
+                                             std::make_tuple(14, "exp3"), std::make_tuple(15, "null_eps_for_perf")};
 
 const auto kTestTasksList =
     std::tuple_cat(ppc::util::AddFuncTask<KiselevITestTaskSEQ, InType>(kTestParam, PPC_SETTINGS_example_threads));

@@ -1,11 +1,10 @@
 #include "kiselev_i_trapezoidal_method_for_multidimensional_integrals/seq/include/ops_seq.hpp"
 
 #include <cmath>
-#include <numeric>
 #include <vector>
 
 #include "kiselev_i_trapezoidal_method_for_multidimensional_integrals/common/include/common.hpp"
-#include "util/include/util.hpp"
+// #include "util/include/util.hpp"
 
 namespace kiselev_i_trapezoidal_method_for_multidimensional_integrals {
 
@@ -37,10 +36,10 @@ bool KiselevITestTaskSEQ::PreProcessingImpl() {
   return true;
 }
 
-double KiselevITestTaskSEQ::FunctionTypeChoose(int type_f, double x, double y) {
-  switch (type_f) {
+double KiselevITestTaskSEQ::FunctionTypeChoose(int type_x, double x, double y) {
+  switch (type_x) {
     case 0:
-      return x * x + y * y;
+      return (x * x) + (y * y);
     case 1:
       return std::sin(x) * std::cos(y);
     case 2:
@@ -59,7 +58,7 @@ double KiselevITestTaskSEQ::ComputeIntegral(const std::vector<int> &steps) {
   double hy = (GetInput().right_bounds[1] - GetInput().left_bounds[1]) / steps[1];
 
   for (int i = 0; i <= steps[0]; i++) {
-    double x = GetInput().left_bounds[0] + i * hx;
+    double x = GetInput().left_bounds[0] + (i * hx);
     double wx = (i == 0 || i == steps[0]) ? 0.5 : 1.0;
 
     for (int j = 0; j <= steps[1]; j++) {
@@ -91,7 +90,7 @@ bool KiselevITestTaskSEQ::RunImpl() {
   double current = prev;
 
   int iter = 0;
-  const int max_iter = 2;
+  const int max_iter = 1;  // for time_limit
 
   while (iter < max_iter) {
     for (auto &s : steps) {

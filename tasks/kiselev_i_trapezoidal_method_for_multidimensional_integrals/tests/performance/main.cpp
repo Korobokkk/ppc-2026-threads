@@ -61,14 +61,14 @@ namespace kiselev_i_trapezoidal_method_for_multidimensional_integrals {
 
 class KiselevPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
  protected:
-  InType input_data_;
+  InType input_data;
 
   void SetUp() override {
-    input_data_.left_bounds = {0.0, 0.0};
-    input_data_.right_bounds = {1.0, 1.0};
-    input_data_.step_n_size = {1000, 1000};  // стабильная нагрузка
-    input_data_.type_function = 0;
-    input_data_.epsilon = 0.0;  // perf = без адаптации
+    input_data.left_bounds = {0.0, 0.0};
+    input_data.right_bounds = {1.0, 1.0};
+    input_data.step_n_size = {1000, 1000};  // стабильная нагрузка
+    input_data.type_function = 0;
+    input_data.epsilon = 0.0;  // perf = без адаптации
   }
 
   bool CheckTestOutputData(OutType &output_data) final {
@@ -76,7 +76,7 @@ class KiselevPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
   }
 
   InType GetTestInputData() final {
-    return input_data_;
+    return input_data;
   }
 };
 
