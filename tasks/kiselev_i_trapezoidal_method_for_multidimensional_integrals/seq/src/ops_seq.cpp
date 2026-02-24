@@ -90,7 +90,7 @@ bool KiselevITestTaskSEQ::RunImpl() {
   double current = prev;
 
   int iter = 0;
-  const int max_iter = 5;
+  const int max_iter = 2;
 
   while (iter < max_iter) {
     for (auto &s : steps) {
