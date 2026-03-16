@@ -187,11 +187,9 @@ const auto kTestTasksList =
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
-const auto kFuncTestName =
-    KiselevIRunFuncTestsThreads::PrintFuncTestName<KiselevIRunFuncTestsThreads>;
+const auto kFuncTestName = KiselevIRunFuncTestsThreads::PrintFuncTestName<KiselevIRunFuncTestsThreads>;
 
 namespace {
-INSTANTIATE_TEST_SUITE_P(KiselevIntegralTests, KiselevIRunFuncTestsThreads, kGtestValues,
-                         kFuncTestName);
+INSTANTIATE_TEST_SUITE_P(KiselevIntegralTests, KiselevIRunFuncTestsThreads, kGtestValues, kFuncTestName);
 }  // namespace
 }  // namespace kiselev_i_trapezoidal_method_for_multidimensional_integrals
