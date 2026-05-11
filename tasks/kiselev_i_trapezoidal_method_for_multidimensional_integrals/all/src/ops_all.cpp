@@ -2,6 +2,7 @@
 
 #include <mpi.h>
 
+#include <algorithm>
 #include <cmath>
 #include <vector>
 
@@ -12,6 +13,54 @@
 #include "kiselev_i_trapezoidal_method_for_multidimensional_integrals/common/include/common.hpp"
 
 namespace kiselev_i_trapezoidal_method_for_multidimensional_integrals {
+
+namespace {
+
+double EvaluateFunction(int type_function, double x, double y) {
+  switch (type_function) {
+    case 0:
+      return (x * x) + (y * y);
+
+    case 1:
+      return std::sin(x) * std::cos(y);
+
+    case 2:
+      return std::sin(x) + std::cos(y);
+
+    case 3:
+      return std::exp(x + y);
+
+    default:
+      return x + y;
+  }
+}
+
+double ComputeLocalIntegral(const InType &in, const std::vector<int> &steps, int begin, int end) {
+  const int nx = steps[0];
+  const int ny = steps[1];
+
+  const double hx = (in.right_bounds[0] - in.left_bounds[0]) / static_cast<double>(nx);
+  const double hy = (in.right_bounds[1] - in.left_bounds[1]) / static_cast<double>(ny);
+
+  double local_sum = 0.0;
+
+#pragma omp parallel for reduction(+ : local_sum) schedule(static) default(none) \
+    shared(in, steps, begin, end, hx, hy, nx, ny)
+  for (int i = begin; i < end; ++i) {
+    for (int j = 0; j <= ny; ++j) {
+      const double x = in.left_bounds[0] + (static_cast<double>(i) * hx);
+      const double y = in.left_bounds[1] + (static_cast<double>(j) * hy);
+      const double wx = ((i == 0) || (i == nx)) ? 0.5 : 1.0;
+      const double wy = ((j == 0) || (j == ny)) ? 0.5 : 1.0;
+
+      local_sum += wx * wy * EvaluateFunction(in.type_function, x, y);
+    }
+  }
+
+  return local_sum * hx * hy;
+}
+
+}  // namespace
 
 KiselevITestTaskALL::KiselevITestTaskALL(const InType &in) {
   SetTypeOfTask(GetStaticTypeOfTask());
@@ -31,40 +80,8 @@ bool KiselevITestTaskALL::PreProcessingImpl() {
   return true;
 }
 
-double KiselevITestTaskALL::FunctionTypeChoose(int type_x, double x, double y) {
-  switch (type_x) {
-    case 0:
-      return (x * x) + (y * y);
-
-    case 1:
-      return std::sin(x) * std::cos(y);
-
-    case 2:
-      return std::sin(x) + std::cos(y);
-
-    case 3:
-      return std::exp(x + y);
-
-    default:
-      return x + y;
-  }
-}
-
 double KiselevITestTaskALL::ComputeIntegral(const std::vector<int> &steps) {
   const auto &in = GetInput();
-
-  const int nx = steps[0];
-  const int ny = steps[1];
-
-  const double lx = in.left_bounds[0];
-  const double ly = in.left_bounds[1];
-
-  const double rx = in.right_bounds[0];
-  const double ry = in.right_bounds[1];
-
-  const double hx = (rx - lx) / static_cast<double>(nx);
-
-  const double hy = (ry - ly) / static_cast<double>(ny);
 
   int mpi_initialized = 0;
 
@@ -73,124 +90,26 @@ double KiselevITestTaskALL::ComputeIntegral(const std::vector<int> &steps) {
   int rank = 0;
   int size = 1;
 
-  if (mpi_initialized) {
+  if (mpi_initialized != 0) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
   }
 
-  const int total_rows = nx + 1;
-
+  const int total_rows = steps[0] + 1;
   const int rows_per_proc = total_rows / size;
-
   const int remainder = total_rows % size;
-
-  const int begin = rank * rows_per_proc + std::min(rank, remainder);
-
-  const int local_rows = rows_per_proc + (rank < remainder ? 1 : 0);
-
+  const int begin = (rank * rows_per_proc) + std::min(rank, remainder);
+  const int local_rows = rows_per_proc + ((rank < remainder) ? 1 : 0);
   const int end = begin + local_rows;
 
-  double local_sum = 0.0;
+  double local_result = ComputeLocalIntegral(in, steps, begin, end);
+  double global_result = local_result;
 
-  switch (in.type_function) {
-    case 0: {
-#pragma omp parallel for collapse(2) reduction(+ : local_sum) schedule(static)
-      for (int i = begin; i < end; i++) {
-        for (int j = 0; j <= ny; j++) {
-          const double x = lx + (i * hx);
-          const double y = ly + (j * hy);
-
-          const double wx = (i == 0 || i == nx) ? 0.5 : 1.0;
-
-          const double wy = (j == 0 || j == ny) ? 0.5 : 1.0;
-
-          local_sum += wx * wy * ((x * x) + (y * y));
-        }
-      }
-
-      break;
-    }
-
-    case 1: {
-#pragma omp parallel for collapse(2) reduction(+ : local_sum) schedule(static)
-      for (int i = begin; i < end; i++) {
-        for (int j = 0; j <= ny; j++) {
-          const double x = lx + (i * hx);
-          const double y = ly + (j * hy);
-
-          const double wx = (i == 0 || i == nx) ? 0.5 : 1.0;
-
-          const double wy = (j == 0 || j == ny) ? 0.5 : 1.0;
-
-          local_sum += wx * wy * (std::sin(x) * std::cos(y));
-        }
-      }
-
-      break;
-    }
-
-    case 2: {
-#pragma omp parallel for collapse(2) reduction(+ : local_sum) schedule(static)
-      for (int i = begin; i < end; i++) {
-        for (int j = 0; j <= ny; j++) {
-          const double x = lx + (i * hx);
-          const double y = ly + (j * hy);
-
-          const double wx = (i == 0 || i == nx) ? 0.5 : 1.0;
-
-          const double wy = (j == 0 || j == ny) ? 0.5 : 1.0;
-
-          local_sum += wx * wy * (std::sin(x) + std::cos(y));
-        }
-      }
-
-      break;
-    }
-
-    case 3: {
-#pragma omp parallel for collapse(2) reduction(+ : local_sum) schedule(static)
-      for (int i = begin; i < end; i++) {
-        for (int j = 0; j <= ny; j++) {
-          const double x = lx + (i * hx);
-          const double y = ly + (j * hy);
-
-          const double wx = (i == 0 || i == nx) ? 0.5 : 1.0;
-
-          const double wy = (j == 0 || j == ny) ? 0.5 : 1.0;
-
-          local_sum += wx * wy * std::exp(x + y);
-        }
-      }
-
-      break;
-    }
-
-    default: {
-#pragma omp parallel for collapse(2) reduction(+ : local_sum) schedule(static)
-      for (int i = begin; i < end; i++) {
-        for (int j = 0; j <= ny; j++) {
-          const double x = lx + (i * hx);
-          const double y = ly + (j * hy);
-
-          const double wx = (i == 0 || i == nx) ? 0.5 : 1.0;
-
-          const double wy = (j == 0 || j == ny) ? 0.5 : 1.0;
-
-          local_sum += wx * wy * (x + y);
-        }
-      }
-
-      break;
-    }
+  if ((mpi_initialized != 0) && (size > 1)) {
+    MPI_Allreduce(&local_result, &global_result, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   }
 
-  double global_sum = local_sum;
-
-  if (mpi_initialized && size > 1) {
-    MPI_Allreduce(&local_sum, &global_sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  }
-
-  return global_sum * hx * hy;
+  return global_result;
 }
 
 bool KiselevITestTaskALL::RunImpl() {
@@ -198,7 +117,7 @@ bool KiselevITestTaskALL::RunImpl() {
 
   const auto &in = GetInput();
 
-  if (in.left_bounds.size() != 2 || in.right_bounds.size() != 2 || in.step_n_size.size() != 2) {
+  if ((in.left_bounds.size() != 2) || (in.right_bounds.size() != 2) || (in.step_n_size.size() != 2)) {
     GetOutput() = 0.0;
 
     return true;
@@ -216,11 +135,9 @@ bool KiselevITestTaskALL::RunImpl() {
 
   double current = prev;
 
-  int iter = 0;
+  constexpr int kMaxIter = 1;
 
-  const int max_iter = 1;
-
-  while (iter < max_iter) {
+  for (int iter = 0; iter < kMaxIter; ++iter) {
     for (auto &s : steps) {
       s *= 2;
     }
@@ -232,8 +149,6 @@ bool KiselevITestTaskALL::RunImpl() {
     }
 
     prev = current;
-
-    iter++;
   }
 
   GetOutput() = current;
